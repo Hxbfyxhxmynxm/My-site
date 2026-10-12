@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Мой Дневник Бюджета и Меню</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --accent: #38bdf8;
+      --green: #4ade80;
+      --pink: #f472b6;
+      --border: #334155;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+    }
+    .date-badge {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-bottom: 12px;
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      padding: 10px;
+      border-radius: 10px;
+    }
+    .stat-card .label {
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+    .stat-card .value {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: var(--green);
+      margin-top: 4px;
+    }
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin: 15px 0 8px 0;
+      color: var(--accent);
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    li {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--border);
+      font-size: 0.88rem;
+    }
+    li:last-child {
+      border-bottom: none;
+    }
+    .price {
+      font-weight: 600;
+      color: var(--green);
+    }
+    .meal-box {
+      background: rgba(56, 189, 248, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+    .meal-title {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .meal-text {
+      font-size: 0.9rem;
+      margin-top: 2px;
+      font-weight: 500;
+    }
+    .weekend-badge {
+      color: var(--pink);
+      font-weight: bold;
+    }
+    .empty-note {
+      color: #94a3b8;
+      font-style: italic;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="date-badge" id="current-date">...</div>
+  <h2 id="day-title">Загрузка...</h2>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="label" id="budget-label">Бюджет на день</div>
+      <div class="value" id="today-budget">0 ₸</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Остаток на месяц</div>
+      <div class="value" id="total-remaining">28 816 ₸</div>
+    </div>
+  </div>
+
+  <div class="section-title">🍽️ Меню на сегодня:</div>
+  <div id="menu-container"></div>
+
+  <div class="section-title">🛒 Покупки на сегодня:</div>
+  <ul id="shopping-list"></ul>
+</div>
+
+<script>
+  // Шаблоны меню для будней
+  const weekdayMenus = [
+    { breakfast: "Овсянка на молоке + цикорий", lunch: "Куриный суп с вермишелью", dinner: "Гречка с куриной подливой" },
+    { breakfast: "Яичница из 3 яиц + бутерброд с сыром", lunch: "Гречка с куриной подливой", dinner: "Жареный картофель с луком" },
+    { breakfast: "Гренки в яйце + цикорий с молоком", lunch: "Суп с капустой и картофелем", dinner: "Макароны с куриной подливой" },
+    { breakfast: "Омлет с молоком", lunch: "Макароны с курицей в томатном соусе", dinner: "Вареный картофель с маслом и луком" },
+    { breakfast: "Отварные яйца (2 шт) + бутерброды", lunch: "Куриный суп с картофелем", dinner: "Рис с тушеной курицей и морковью" }
+  ];
+
+  // Расписание покупок на 30 дней (с учетом 4 000 ₸ на выходные)
+  const schedule = {
+    1: { title: "Главный закуп база + посуда", budget: 8500, items: [
+      { name: "Сковорода + кружка + миска + приборы", price: 4500 },
+      { name: "2 курицы в морозилку", price: 2500 },
+      { name: "Крупы, макароны, овощи, масло", price: 1500 }
+    ]},
+    2: { title: "Учеба (Без трат)", budget: 0, items: [] },
+    3: { title: "Учеба (Без трат)", budget: 0, items: [] },
+    4: { title: "Свежий хлеб", budget: 150, items: [{ name: "Хлеб (1/2 булки)", price: 150 }] },
+    5: { title: "Молоко к цикорию", budget: 450, items: [{ name: "Молоко 1 л", price: 450 }] },
+    6: { title: "Выходные дома / К девушке", budget: 4000, isWeekend: true, items: [{ name: "Поездка к родителям / Подарки девушке", price: 4000 }] },
+    7: { title: "Выходные дома", budget: 0, isWeekend: true, items: [] },
+    8: { title: "Лоток яиц", budget: 1550, items: [{ name: "Лоток яиц (30 шт)", price: 1400 }, { name: "Хлеб", price: 150 }] },
+    9: { title: "Учеба (Без трат)", budget: 0, items: [] },
+    10: { title: "Учеба (Без трат)", budget: 0, items: [] },
+    11: { title: "Свежий хлеб", budget: 150, items: [{ name: "Свежий хлеб", price: 150 }] },
+    12: { title: "Молоко", budget: 450, items: [{ name: "Молоко 1 л", price: 450 }] },
+    13: { title: "Выходные дома / К девушке", budget: 4000, isWeekend: true, items: [{ name: "Поездка к родителям / Подарки девушке", price: 4000 }] },
+    14: { title: "Выходные дома", budget: 0, isWeekend: true, items: [] },
+    15: { title: "Сыр / колбаса", budget: 1150, items: [{ name: "Сыр или колбаса", price: 1000 }, { name: "Хлеб", price: 150 }] },
+    16: { title: "Учеба (Без трат)", budget: 0, items: [] },
+    17: { title: "Учеба (Без трат)", budget: 0, items: [] },
+    18: { title: "Молоко", budget: 450, items: [{ name: "Молоко 1 л", price: 450 }] },
+    19: { title: "Свежий хлеб", budget: 150, items: [{ name: "Хлеб", price: 150 }] },
+    20: { title: "Выходные дома / К девушке", budget: 4000, isWeekend: true, items: [{ name: "Поездка к родителям / Подарки девушке", price: 4000 }] },
+    21: { title: "Выходные дома", budget: 0, isWeekend: true, items: [] },
+    22: { title: "Яйца и хлеб", budget: 1550, items: [{ name: "Яйца (10-15 шт)", price: 1400 }, { name: "Хлеб", price: 150 }] },
+    23: { title: "Учеба (Без трат)", budget: 0, items: [] },
+    24: { title: "Молоко", budget: 450, items: [{ name: "Молоко", price: 450 }] },
+    25: { title: "Свежий хлеб", budget: 150, items: [{ name: "Хлеб", price: 150 }] },
+    26: { title: "Учеба (Без трат)", budget: 0, items: [] },
+    27: { title: "Выходные дома / К девушке", budget: 4000, isWeekend: true, items: [{ name: "Поездка к родителям / Подарки девушке", price: 4000 }] },
+    28: { title: "Выходные дома", budget: 0, isWeekend: true, items: [] },
+    29: { title: "Учеба (Без трат)", budget: 0, items: [] },
+    30: { title: "Финиш месяца", budget: 0, items: [] }
+  };
+
+  const today = new Date();
+  const dayOfMonth = Math.min(today.getDate(), 30);
+  const dayOfWeek = today.getDay();
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  
+  document.getElementById('current-date').innerText = today.toLocaleDateString('ru-RU', options);
+  
+  const todayData = schedule[dayOfMonth] || { title: "Обычный день", budget: 0, items: [] };
+  
+  document.getElementById('day-title').innerText = `День ${dayOfMonth}: ${todayData.title}`;
+  document.getElementById('today-budget').innerText = `${todayData.budget.toLocaleString()} ₸`;
+
+  let spentSoFar = 0;
+  for (let d = 1; d <= dayOfMonth; d++) {
+    if (schedule[d]) spentSoFar += schedule[d].budget;
+  }
+  const remaining = Math.max(28816 - spentSoFar, 0);
+  document.getElementById('total-remaining').innerText = `${remaining.toLocaleString()} ₸`;
+
+  const menuContainer = document.getElementById('menu-container');
+  if (dayOfWeek === 0 || dayOfWeek === 6 || todayData.isWeekend) {
+    menuContainer.innerHTML = `
+      <div class="meal-box">
+        <div class="meal-title weekend-badge">Выходные дома!</div>
+        <div class="meal-text">Едешь к родителям и девушке (бюджет 4 000 ₸). В общаге готовить не нужно!</div>
+      </div>`;
+  } else {
+    const menuIndex = (dayOfMonth % weekdayMenus.length);
+    const menu = weekdayMenus[menuIndex];
+    menuContainer.innerHTML = `
+      <div class="meal-box"><div class="meal-title">Завтрак:</div><div class="meal-text">${menu.breakfast}</div></div>
+      <div class="meal-box"><div class="meal-title">Обед (после пар):</div><div class="meal-text">${menu.lunch}</div></div>
+      <div class="meal-box"><div class="meal-title">Ужин:</div><div class="meal-text">${menu.dinner}</div></div>
+    `;
+  }
+
+  const listElement = document.getElementById('shopping-list');
+  listElement.innerHTML = '';
+
+  if (todayData.items.length === 0) {
+    listElement.innerHTML = '<li class="empty-note">Покупать ничего не нужно, всё есть в запасе!</li>';
+  } else {
+    todayData.items.forEach(item => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span>${item.name}</span><span class="price">${item.price.toLocaleString()} ₸</span>`;
+      listElement.appendChild(li);
+    });
+  }
+</script>
+
+</body>
+</html>
